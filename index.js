@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 const axios = require("axios");
 const http = require("http");
 const { Server } = require("socket.io");
-
+const crypto = require('crypto');
 const app=express();
 const port = process.env.PORT || 5000;
 // app.use(express.json({ limit: '50mb' }));
@@ -19,9 +19,9 @@ app.use(cors())
 app.use(express.json())
 
 
-  // const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.q45my.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fqcn4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+  // newlandingpage 
+// 96KlHwz2RO8AwpjK 
+const uri = `mongodb+srv://newlandingpage:96KlHwz2RO8AwpjK@cluster0.4awdg7q.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -32,6 +32,16 @@ const client = new MongoClient(uri, {
 });
 
 
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fqcn4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+// const client = new MongoClient(uri, {
+//   serverApi: {
+//     version: ServerApiVersion.v1,
+//     strict: true,
+//     deprecationErrors: true,
+//   }
+// });
+
+
 async function run() {
 
   try{
@@ -40,129 +50,239 @@ async function run() {
       const database = client.db('Overseas');
       const homeProjectCollection = database.collection('HomeProject');     
       const userCollection = database.collection('users');
-      const cashcategoryCollection = database.collection('cashcategory');
-      const chatsCollection = database.collection('chats');
-      const searchCollection = database.collection('searchlist');
-      const lovelistCollection = database.collection('productlike');
       const bannerpostCollection = database.collection('bannerposts');
-      const smsCollection = database.collection('sms');
+      const cashcategoryCollection = database.collection('cashcategory');
+      const productdataCollection = database.collection("productsdata");
+      const paymentCollection = database.collection("payment");
+      const navberpostCollection = database.collection('navber');
+      const footerpostCollection = database.collection('footer');
+      const aboutpostCollection = database.collection('about');
+      const blogpostCollection = database.collection('blog');
+      const offerpostCollection = database.collection('offer');
+      const latestproductcollection = database.collection('latestproduct');
+
 
       
 
     // Fetch chat historyapi/form-submit
  // Fetch chat history
 
-  app.get("/api/chats", async (req, res) => {
-  const { productId, userPhone } = req.query;
-  // console.log(req.query)
 
-  try {
-    const messages = await chatsCollection
-      .find({
-        productId,
-        $or: [
-          { senderEmail: userPhone },
-          { receiverEmail: userPhone },
-        ],
-      })
-      .sort({ timestamp: 1 })
-      .toArray();
-
-    res.json(messages);
-  } catch (error) {
-    console.error("Error fetching messages:", error);
-    res.status(500).json({ error: "Failed to fetch messages" });
-  }
-});
-
-
-
-// Save a message
-app.post("/api/chats", async (req, res) => {
-  const { productId, senderEmail, receiverEmail, message,productimage,productmodel,productprice,productbrand,productcondition,productdistrict,productupazila,sellerName,username } = req.body;
-  // console.log(req.body)
-
-  if (!productId || !senderEmail || !receiverEmail || !message) {
-    return res.status(400).json({ error: "Incomplete message data." });
-  }
-
-  try {
-    const chat = {
-      productId,
-      senderEmail,
-      receiverEmail,
-      message,
-      timestamp: new Date(),
-      productimage,
-      productmodel,
-      productprice,
-      productbrand,
-      productcondition,
-      productdistrict,
-      productupazila,
-      username,
-      sellerName
-    };
-
-    // Save the chat message to the database
-    const result = await chatsCollection.insertOne(chat);
-
-    // Return the saved message with its ID
-    res.status(201).json({ ...chat, _id: result.insertedId });
-  } catch (error) {
-    console.error("Error saving chat:", error);
-    res.status(500).json({ error: "Failed to save chat message." });
-  }
-});
-
-
-
-
-
-// Socket.IO for real-time messaging
-io.on("connection", (socket) => {
-  console.log("New client connected");
-
-  socket.on("sendMessage", async (chat) => {
-    const { productId, senderEmail, receiverEmail, message } = chat;
-
+  // Add a new product
+  app.post("/postProductdata", async (req, res) => {
     try {
-      if (!productId || !senderEmail || !receiverEmail || !message) {
-        throw new Error("Incomplete message data.");
-      }
-
-      const newChat = {
-        productId,
-        senderEmail,
-        receiverEmail,
-        message,
-        timestamp: new Date(),
-      };
-
-      // Save the chat message to the database
-      const result = await chatsCollection.insertOne(newChat);
-
-      const savedMessage = { ...newChat, _id: result.insertedId };
-
-      // Emit the message to both participants
-      io.to(senderEmail).emit("receiveMessage", savedMessage);
-      io.to(receiverEmail).emit("receiveMessage", savedMessage);
+      const data = req.body;
+      const result = await productdataCollection.insertOne(data);
+      res.send({ insertedId: result.insertedId });
     } catch (error) {
-      console.error("Error processing message:", error);
+      res.status(500).send({ error: "Failed to add product" });
     }
   });
+  app.post("/postlatest", async (req, res) => {
+    try {
+      const data = req.body;
+      const result = await latestproductcollection.insertOne(data);
+      res.send({ insertedId: result.insertedId });
+    } catch (error) {
+      res.status(500).send({ error: "Failed to add product" });
+    }
+  });
+
+  app.post("/offerpost", async (req, res) => {
+    try {
+      const data = req.body;
+      const result = await offerpostCollection.insertOne(data);
+      res.send({ insertedId: result.insertedId });
+    } catch (error) {
+      res.status(500).send({ error: "Failed to add product" });
+    }
+  });
+
+  app.get("/getoffer", async (req, res) => {
+    const products = await offerpostCollection.find({}).toArray();
+    res.send(products);
+  });
+ 
+
+  // Get all products
+  app.get("/getproducts", async (req, res) => {
+    const products = await productdataCollection.find({}).toArray();
+    res.send(products);
+  });
+  app.get("/blogpart", async (req, res) => {
+    const products = await blogpostCollection.find({}).toArray();
+    res.send(products);
+  });
+
+  // Get a single product by ID 
+    app.get("/product/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const product = await productdataCollection.findOne({ _id: new ObjectId(id) });
+        res.send(product);
+      } catch (error) {
+        res.status(500).send({ error: "Invalid ID format" });
+      }
+    });
+
+    // ✅ Get related products
+    app.get("/related-products/:related", async (req, res) => {
+      try {
+        const relatedCategory = req.params.related;
+        console.log("Fetching related products for:", relatedCategory);
+    
+        // Ensure proper filtering (case insensitive match)
+        const relatedProducts = await productdataCollection
+          .find({ related: { $regex: new RegExp(`^${relatedCategory}$`, "i") } }) // Case insensitive
+          .toArray();
+    
+        res.json(relatedProducts);
+      } catch (error) {
+        console.error("Error fetching related products:", error);
+        res.status(500).json({ error: "Failed to fetch related products" });
+      }
+    });
+    
+    
+    app.post('/init', async (req, res) => {
+      try {
+        const { cartProducts, total_amount,  product_name,  cus_name, cus_email, date, status, address,  cus_postcode, District, payment_number, phone } = req.body;
+        
+        if (!cartProducts || !cus_name || !cus_email) {
+          return res.status(400).json({ message: 'Missing required fields' });
+        }
+        
+        const email = cartProducts.map((data) => data.buyerEmail);
+        const adminemail = cartProducts.map((data) => data.adminEmail);
+        
+        // Calculate total income
+        const totalIncome = cartProducts.reduce((acc, data) => acc + (data.totalIncome || 0), 0);
+    
+        const data = {
+          emails: email,
+          admindata: adminemail,
+          total_amount: total_amount || 0,
+          Totalincome: totalIncome,
+          tran_id: uuidv4(),
+          shipping_method: 'Courier',
+          product_name: product_name || 'Default Product Name',
+          cus_name,
+          cus_email,
+          phone,
+          date,
+          status,
+          cartProducts,
+          product_image: 'https://i.ibb.co/t8Xfymf/logo-277198595eafeb31fb5a.png',
+          address,
+          cus_add2: 'Dhaka',
+          cus_postcode,
+          District,
+          payment_number,
+         
+        };
+    
+        const order = await paymentCollection.insertOne(data);
+        console.log(data);
+        res.status(200).json({ message: 'Order successfully inserted', orderId: order.insertedId });
+      } catch (error) {
+        console.error('Error processing order:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
+
+    app.get('/userMy', async (req, res) => {
+      try {
+        const email = req.params.email; // Extract the email from the URL
+        const tickets = await paymentCollection.find({ }).toArray(); // Query by email
+        res.json(tickets);
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch tickets' });
+      }
+    });
+
+    app.delete("/manageAllOrderDelete/:id", async (req, res) => {
+      const { id } = req.params;
+    
+      try {
+        // Convert id to ObjectId
+        const objectId = new ObjectId(id);
+        
+        // Attempt to delete the document
+        const result = await paymentCollection.deleteOne({ _id: objectId });
+    
+        // Check if deletion was successful
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: 'Order not found' });
+        }
+    
+        // Respond with success
+        res.status(200).json({ message: 'Order deleted successfully' });
+      } catch (error) {
+        console.error('Error deleting order:', error);
+        res.status(500).json({ message: 'An error occurred while deleting the order' });
+      }
+    });
+
+
+
+app.get("/getcategoryparts", async (req, res) => {
+  const result = await cashcategoryCollection.find({}).toArray();
+  res.json(result);
 });
+
+ // details show product 
+ app.get('/product/:id', async(req,res)=>{
+  const id=req.params.id
+  const query={_id: new ObjectId(id)}
+  const result=await cashcategoryCollection.findOne(query)
+  res.json(result)
+});
+
+ const ENCRYPTION_KEY = '12345678901234567890123456789012'; 
+const IV = crypto.randomBytes(16);
+
+function encryptData(data) {
+    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'utf8'), IV);
+    let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return IV.toString('hex') + ':' + encrypted;
+}
+
+// Decryption function
+function decryptData(encryptedData) {
+  const [ivHex, encryptedHex] = encryptedData.split(':');
+  const iv = Buffer.from(ivHex, 'hex');
+  const encryptedText = Buffer.from(encryptedHex, 'hex');
+  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'utf8'), iv);
+  let decrypted = decipher.update(encryptedText);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  return JSON.parse(decrypted.toString());
+}
+
+
+ 
+
+
+
+
+
+
+
+
+
 
 
 // baner post collection 
 
 app.post('/postaddbanner', async (req, res) => {
   try {
-    const { title,  image } = req.body;
+    const { title,link,time,  image } = req.body;
 
     // Insert the data into the MongoDB collection
     const result = await bannerpostCollection.insertOne({
       title,
+      link,
+      time,
       image,
       createdAt: new Date(),
     });
@@ -199,18 +319,37 @@ app.get("/editbaners/:id", async (req, res) => {
   const user = await bannerpostCollection.findOne(query);
   res.json(user);
 });
-
-app.get("/editcategoryproducts/:id", async (req, res) => {
+app.get("/editoffer/:id", async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) };
-  const user = await cashcategoryCollection.findOne(query);
+  const user = await offerpostCollection.findOne(query);
   res.json(user);
 });
+app.get("/editproductdata/:id", async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const user = await productdataCollection.findOne(query);
+  res.json(user);
+});
+app.get("/editabouts/:id", async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const user = await aboutpostCollection.findOne(query);
+  res.json(user);
+});
+app.get("/editblogs/:id", async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const user = await blogpostCollection.findOne(query);
+  res.json(user);
+});
+
+
 
 app.put('/bannerdataupdate/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { title,  image } = req.body;
+    const { title,link, time, image } = req.body;
     
 
     const objectId = new ObjectId(id);
@@ -219,6 +358,60 @@ app.put('/bannerdataupdate/:id', async (req, res) => {
       {
         $set: {
           title,
+          link,
+          time,
+          image,
+        },
+      }
+    );
+
+    if (result.modifiedCount > 0) {
+      res.json({ message: 'Award updated successfully', modifiedCount: result.modifiedCount });
+    } else {
+      res.status(404).json({ message: 'Banner not found or no changes made' });
+    }
+  } catch (error) {
+    console.error('Error updating banner:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+app.put('/offerupdate/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title,size, code,discount,related,ProductPrice,oldPrice, image } = req.body;
+    
+    const objectId = new ObjectId(id);
+      const result = await offerpostCollection.updateOne(
+      { _id: objectId }, 
+      {
+        $set: {
+          title,size, code,discount,related,ProductPrice,oldPrice,
+          image,
+        },
+      }
+    );
+
+    if (result.modifiedCount > 0) {
+      res.json({ message: 'Award updated successfully', modifiedCount: result.modifiedCount });
+    } else {
+      res.status(404).json({ message: 'Banner not found or no changes made' });
+    }
+  } catch (error) {
+    console.error('Error updating banner:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+app.put('/productdataupdate/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title,size, code,discount,category,ProductPrice,description, image } = req.body;
+    
+    const objectId = new ObjectId(id);
+      const result = await productdataCollection.updateOne(
+      { _id: objectId }, 
+      {
+        $set: {
+          title,size, code,discount,category,ProductPrice,description,
           image,
         },
       }
@@ -235,49 +428,123 @@ app.put('/bannerdataupdate/:id', async (req, res) => {
   }
 });
 
-app.put("/catehorypartsupdate/:id", async (req, res) => {
+
+app.put('/aboutdataupdate/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      condition,
-      productStatus,
-      brand,
-      title,
-      model,
-      edition,
-      description,
-      price,
-      images,
-    } = req.body;
+    const { title,description, image } = req.body;
+    
 
     const objectId = new ObjectId(id);
-
-    const result = await cashcategoryCollection.updateOne(
-      { _id: objectId },
+      const result = await aboutpostCollection.updateOne(
+      { _id: objectId }, 
       {
         $set: {
-          condition,
-          productStatus,
-          brand,
           title,
-          model,
-          edition,
           description,
-          price,
-          images,
+          image,
         },
       }
     );
 
     if (result.modifiedCount > 0) {
-      res.json({ message: "Product updated successfully", modifiedCount: result.modifiedCount });
+      res.json({ message: 'Award updated successfully', modifiedCount: result.modifiedCount });
     } else {
-      res.status(404).json({ message: "Product not found or no changes made" });
+      res.status(404).json({ message: 'Banner not found or no changes made' });
     }
   } catch (error) {
-    console.error("Error updating product:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error('Error updating banner:', error);
+    res.status(500).json({ message: 'Server Error' });
   }
+});
+
+
+app.put('/blogdataupdate/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title,description,content, image } = req.body;
+    
+
+    const objectId = new ObjectId(id);
+      const result = await blogpostCollection.updateOne(
+      { _id: objectId }, 
+      {
+        $set: {
+          title,
+          description,
+          content,
+          image,
+        },
+      }
+    );
+
+    if (result.modifiedCount > 0) {
+      res.json({ message: 'Award updated successfully', modifiedCount: result.modifiedCount });
+    } else {
+      res.status(404).json({ message: 'Banner not found or no changes made' });
+    }
+  } catch (error) {
+    console.error('Error updating banner:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+
+
+// navber 
+
+app.post('/postaddnavber', async (req, res) => {
+  try {
+    const { home,about,contact,offer,allads,career,  image } = req.body;
+
+    // Insert the data into the MongoDB collection
+    const result = await navberpostCollection.insertOne({
+      home,
+      about,
+      contact,
+      offer,
+      allads,
+      career,
+      image,
+      createdAt: new Date(),
+    });
+
+    // Check if insert was successful and return the inserted data
+    if (result.acknowledged) {
+      res.status(201).json({
+        message: 'Award added successfully',
+        data: {
+          _id: result.insertedId,
+          home,
+          about,
+          contact,
+          offer,
+          allads,
+          career,
+          image,
+          createdAt: new Date(),
+        },
+      });
+    } else {
+      res.status(500).json({ message: 'Error adding banner' });
+    }
+  } catch (error) {
+    console.error('Error adding banner:', error);
+    res.status(500).json({ message: 'Error adding banner' });
+  }
+});
+
+
+app.get("/getnavber", async (req, res) => {
+  const result = await navberpostCollection.find({}).toArray();
+  res.json(result);
+});
+
+app.get("/editnavbers/:id", async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const user = await navberpostCollection.findOne(query);
+  res.json(user);
 });
 
 
@@ -287,130 +554,165 @@ app.delete("/bannerpartdelete/:id", async (req, res) => {
   });
   res.json(result);
 });
-
-app.delete("/categoriespartsdelete/:id", async (req, res) => {
-  const result = await cashcategoryCollection.deleteOne({
+app.delete("/offerpartdelete/:id", async (req, res) => {
+  const result = await offerpostCollection.deleteOne({
+    _id: new ObjectId(req.params.id),
+  });
+  res.json(result);
+});
+app.delete("/productdatadelete/:id", async (req, res) => {
+  const result = await productdataCollection.deleteOne({
     _id: new ObjectId(req.params.id),
   });
   res.json(result);
 });
 
 
-// pending data delete dashboard 
-app.delete("/pendingdatsdelete/:id", async (req, res) => {
-  const result = await cashcategoryCollection.deleteOne({
-    _id: new ObjectId(req.params.id),
-  });
-  res.json(result);
-});
-// chat list show 
-
-// Get Chat List
-// Get Chat List
-// Server-side: GET /chatlist to get users with unread messages.
-  // Server-side: GET /chatlist to get users with unread messages.
-app.get("/chatlist", async (req, res) => {
-  const { userPhone } = req.query;
-
-  if (!userPhone) return res.status(400).json({ error: "User phone required" });
-
+app.put('/navberdataupdate/:id', async (req, res) => {
   try {
-    // Find chats where the current user is the receiver and the message is not seen
-    const chats = await chatsCollection.aggregate([
+    const { id } = req.params;
+    const { home,about,contact,offer,allads,career, image } = req.body;
+    
+
+    const objectId = new ObjectId(id);
+      const result = await navberpostCollection.updateOne(
+      { _id: objectId }, 
       {
-        $match: {
-          $or: [
-            { senderEmail: userPhone }, // User sent the message
-            { receiverEmail: userPhone }, // User received the message
-          ],
+        $set: {
+          home,
+      about,
+      contact,
+      offer,
+      allads,
+      career,
+          image,
         },
-      },
-      {
-        $group: {
-          _id: {
-            chatPartner: {
-              $cond: [
-                { $eq: ["$senderEmail", userPhone] },
-                "$receiverEmail",
-                "$senderEmail",
-              ],
-            },
-          },
-          unreadMessages: {
-            $sum: {
-              $cond: [
-                { $and: [{ $eq: ["$receiverEmail", userPhone] }, { $eq: ["$seen", false] }] },
-                1,
-                0,
-              ],
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          phoneNumber: "$_id.chatPartner",
-          unreadMessages: 1,
-        },
-      },
-    ]).toArray();
-
-    // Fetch usernames for chat partners
-    const userPhones = chats.map((chat) => chat.phoneNumber);
-    const userDetails = await userCollection
-      .find({ phoneNumber: { $in: userPhones } })
-      .toArray();
-
-    // Map phone numbers to usernames
-    const userMap = {};
-    userDetails.forEach((user) => {
-      userMap[user.phoneNumber] = user.displayName || user.phoneNumber;
-    });
-
-    // Return chat list with unread message count
-    const chatList = chats.map((chat) => ({
-      phoneNumber: chat.phoneNumber,
-      username: userMap[chat.phoneNumber] || chat.phoneNumber,
-      hasUnread: chat.unreadMessages > 0, // Unread messages flag
-    }));
-
-    res.json(chatList);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-
-
-
-// Get One-to-One Conversation
-app.get("/conversation", async (req, res) => {
-  const { userPhone, otheruserPhone } = req.query;
-
-  try {
-    const messages = await chatsCollection
-      .find({
-        $or: [
-          { senderEmail: userPhone, receiverEmail: otheruserPhone },
-          { senderEmail: otheruserPhone, receiverEmail: userPhone },
-        ],
-      })
-      .sort({ timestamp: 1 })
-      .toArray();
-
-    // Mark messages as seen when receiver opens the chat
-    await chatsCollection.updateMany(
-      { senderEmail: otheruserPhone, receiverEmail: userPhone, seen: false },
-      { $set: { seen: true } }
+      }
     );
 
-    res.json(messages);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (result.modifiedCount > 0) {
+      res.json({ message: 'Award updated successfully', modifiedCount: result.modifiedCount });
+    } else {
+      res.status(404).json({ message: 'Banner not found or no changes made' });
+    }
+  } catch (error) {
+    console.error('Error updating banner:', error);
+    res.status(500).json({ message: 'Server Error' });
   }
 });
+
+
+// footer 
+app.get("/api/footer", async (req, res) => {
+  try {
+    const footerData = await footerpostCollection.find({}).toArray();
+
+    res.json(footerData);
+  } catch (error) {
+    console.error("Error fetching footer data:", error);
+    res.status(500).json({ error: "Failed to fetch data" });
+  }
+});
+
+
+
+app.get("/footer/:id", async (req, res) => {
+  try {
+    const footerId = req.params.id;
+    if (!ObjectId.isValid(footerId)) {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
+
+    const footer = await footerpostCollection.findOne({ _id: new ObjectId(footerId) });
+
+    if (!footer) {
+      return res.status(404).json({ error: "Footer not found" });
+    }
+
+    res.json(footer);
+  } catch (error) {
+    console.error("Error fetching footer:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// 📌 Update footer data by ID
+app.put("/footer/:id", async (req, res) => {
+  try {
+    const footerId = req.params.id;
+    const updatedFooterData = req.body;
+
+    console.log("Received ID:", footerId);
+    console.log("Received Footer Data:", updatedFooterData);
+
+    // Validate the ID format
+    if (!ObjectId.isValid(footerId)) {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
+
+    // Check if the document exists before updating
+    const footerToUpdate = await footerpostCollection.findOne({ _id: new ObjectId(footerId) });
+
+    if (!footerToUpdate) {
+      return res.status(404).json({ error: "Footer not found" });
+    }
+
+    // Exclude _id field from the update data if it exists in the request body
+    const { _id, ...footerWithoutId } = updatedFooterData;
+
+    const result = await footerpostCollection.updateOne(
+      { _id: new ObjectId(footerId) },
+      { $set: footerWithoutId } // Only update fields without _id
+    );
+
+    console.log("Update Result:", result); // Log the result of the update operation
+
+    if (result.modifiedCount === 0) {
+      return res.status(400).json({ error: "No changes made to the footer" });
+    }
+
+    res.json({ message: "Footer updated successfully" });
+  } catch (error) {
+    console.error("Error updating footer:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/getfooters", async (req, res) => {
+  const result = await footerpostCollection.find({}).toArray();
+  res.json(result);
+});
+
+
+// about 
+app.get("/aboutparts", async (req, res) => {
+  const result = await aboutpostCollection.find({}).toArray();
+  res.json(result);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
 
 // unread message 
 
@@ -419,53 +721,6 @@ app.get("/conversation", async (req, res) => {
 
 
 
-// Send a Message
-app.post("/send", async (req, res) => {
-  const { senderEmail, receiverEmail, message, productId } = req.body;
-
-  if (!senderEmail || !receiverEmail || !message) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
-  try {
-    const newMessage = {
-      senderEmail,
-      receiverEmail,
-      message,
-      productId: productId || null,
-      seen: false,
-      timestamp: new Date(),
-    };
-
-    const result = await chatsCollection.insertOne(newMessage);
-    res.json({ ...newMessage, _id: result.insertedId });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-
-app.post("/markSeen", async (req, res) => {
-  console.log("Mark Seen endpoint hit");
-  const { senderEmail, receiverEmail } = req.body;
-
-  if (!senderEmail || !receiverEmail) {
-    return res.status(400).json({ error: "Missing senderEmail or receiverEmail" });
-  }
-
-  try {
-    const result = await chatsCollection.updateMany(
-      { senderEmail, receiverEmail, seen: false },
-      { $set: { seen: true } }
-    );
-
-    res.json({ success: true, updatedCount: result.modifiedCount });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 
 
@@ -483,29 +738,19 @@ app.post("/markSeen", async (req, res) => {
 
 
 
-      app.post("/api/form-submit", async (req, res) => {
-        console.log(req.body)
-        try {
-          
-          const result = await cashcategoryCollection.insertOne(req.body);
-          res.status(200).json({ message: "Data submitted successfully!", result });
-        } catch (error) {
-          console.error("Error saving data:", error);
-          res.status(500).json({ message: "Failed to submit data" });
-        } 
-      });
 
-      app.get("/getcategoryparts", async (req, res) => {
-        const result = await cashcategoryCollection.find({}).toArray();
-        res.json(result);
-      });
 
+
+
+
+     
  // add database user collection 
  app.post('/users', async (req, res) => {
-  const {  displayName,password, phoneNumber } = req.body;
 
   try {
     // Check if the phone number already exists
+    const decryptedData = decryptData(req.body.payload);
+    const { displayName, password, phoneNumber } = decryptedData;
     const existingUser = await userCollection.findOne({ phoneNumber });
 
     if (existingUser) {
@@ -533,106 +778,19 @@ app.post("/markSeen", async (req, res) => {
 
 
 
-//  pending all product and approved product 
-app.get('/products', async (req, res) => {
-  try {
-    const pendingProducts = await cashcategoryCollection.find({ productStatus: 'pending' }).toArray();
-    res.status(200).json(pendingProducts);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch products', error });
-  }
-});
-
-
-// all product show 
-
-app.get('/allshowsproducts', async (req, res) => {
-  try {
-    const pendingProducts = await cashcategoryCollection.find({  }).toArray();
-    res.status(200).json(pendingProducts);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch products', error });
-  }
-});
-
-
-// approved product 
-// Update product status to approved
-app.patch('/approvedproducts/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const result = await cashcategoryCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { productStatus: 'approved' } }
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    res.status(200).json({ message: 'Product approved successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to update product status', error });
-  }
-});
 
 
 
-  // adds show account user portal data show 
-  app.get("/api/addsproducts", async (req, res) => {
-    const { phone } = req.query;
-    if (!phone) {
-      return res.status(400).json({ message: "User email is required" });
-    }
-    try {
-      const products = await cashcategoryCollection.find({ phone }).toArray();
-      res.status(200).json(products);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching products", error });
-    }
-  });
-  
 
-  // top up ads 
-  app.put("/api/updateBoost", async (req, res) => {
-    const { productId, packageName, amount, boostingDays, boostingDate, boostingTime, bkashNumber } = req.body;
-  
-    if (!productId || !packageName || !amount || !boostingDays || !boostingDate || !boostingTime || !bkashNumber) {
-      return res.status(400).json({ message: "All fields are required." });
-    }
-  
-    try {
-      
-      // Update the ad with boosting details
-      const result = await cashcategoryCollection.updateOne(
-        { _id: new ObjectId(productId) },
-        {
-          $set: {
-            boostingDetails: {
-              packageName,
-              amount,
-              boostingDays,
-              boostingDate,
-              boostingTime,
-              bkashNumber,
-              boostedAt: new Date(),
-            },
-          },
-        }
-      );
-  
-      if (result.modifiedCount > 0) {
-        res.status(200).json({ message: "Ad boosted successfully." });
-      } else {
-        res.status(404).json({ message: "Ad not found or could not be updated." });
-      }
-    } catch (error) {
-      console.error("Error boosting ad:", error);
-      res.status(500).json({ message: "Failed to boost the ad." });
-    }
-  });
+
+
+
+
+
  
+  
+
+  
 
 
 
@@ -648,7 +806,7 @@ const SENDER_ID = process.env.DB_SMSID;
   
   // Axios instance for BulkSMSBD API
   const axiosInstance = axios.create({
-    baseURL: "http://bulksmsbd.net/api",
+    baseURL: "http://sms.joypurhost.com/api",
   });
   
   // 1. Send OTP
@@ -701,51 +859,8 @@ app.post("/verify-otp", (req, res) => {
   }
 });
 
-// 3. Get all products
-app.get("/api/products", async (req, res) => {
-  try {
-    const products = await smsCollection.find().toArray();
-    res.status(200).json(products);
-  } catch (error) {
-    console.error("Error fetching products:", error.message);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-app.get("/api/newproductss", async (req, res) => {
-  try {
-    const products = await cashcategoryCollection.find().toArray();
-    res.status(200).json(products);
-  } catch (error) {
-    console.error("Error fetching products:", error.message);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
 
-// 4. Update package name
-app.put("/api/products/update-package/:id", async (req, res) => {
-  const { id } = req.params;
-  const { packageName } = req.body;
 
-  if (!packageName) {
-    return res.status(400).json({ error: "Package name is required" });
-  }
-
-  try {
-    const result = await cashcategoryCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { "boostingDetails.packageName": packageName } }
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: "Product not found" });
-    }
-
-    res.status(200).json({ message: "Package name updated successfully" });
-  } catch (error) {
-    console.error("Error updating package name:", error.message);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
 
 
 
@@ -762,6 +877,18 @@ app.put("/api/products/update-package/:id", async (req, res) => {
       isAdmin=true;
     }
     res.json({admin:isAdmin})
+});
+
+// database check subadmin 
+app.get('/userLoginsubadmin/:phone', async(req,res)=>{
+  const phone=req.params.phone;
+  const query={phoneNumber:phone}
+  const user=await userCollection.findOne(query)
+  let issubAdmin=false;
+  if(user?.subrole==='subadmin'){
+    issubAdmin=true;
+  }
+  res.json({subadmin:issubAdmin})
 });
 
 
@@ -849,43 +976,45 @@ app.get("/getadminlist", async (req, res) => {
 });
 
 // block user 
-app.patch("/blockuser/:email", async (req, res) => {
-  const userEmail = req.params.email;
+app.patch("/blockuser/:phoneNumber", async (req, res) => {
+  const userPhone = req.params.phoneNumber;
   try {
-    const result = await userCollection.updateOne(
-      { email: userEmail },
-      { $set: { status: "blocked" } }
-    );
+      const result = await userCollection.updateOne(
+          { phoneNumber: userPhone },
+          { $set: { status: "blocked" } }
+      );
 
-    if (result.modifiedCount > 0) {
-      res.json({ success: true, message: "User blocked successfully." });
-    } else {
-      res.status(404).json({ success: false, message: "User not found." });
-    }
+      if (result.modifiedCount > 0) {
+          res.json({ success: true, message: "User blocked successfully." });
+      } else {
+          res.status(404).json({ success: false, message: "User not found." });
+      }
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 // unblock user 
 // Unblock user
-app.patch("/unblockuser/:email", async (req, res) => {
-  const userEmail = req.params.email;
+app.patch("/unblockuser/:phoneNumber", async (req, res) => {
+  const userPhone = req.params.phoneNumber;
   try {
-    const result = await userCollection.updateOne(
-      { email: userEmail },
-      { $set: { status: "active" } }
-    );
+      const result = await userCollection.updateOne(
+          { phoneNumber: userPhone },
+          { $set: { status: "active" } }
+      );
 
-    if (result.modifiedCount > 0) {
-      res.json({ success: true, message: "User unblocked successfully." });
-    } else {
-      res.status(404).json({ success: false, message: "User not found." });
-    }
+      if (result.modifiedCount > 0) {
+          res.json({ success: true, message: "User unblocked successfully." });
+      } else {
+          res.status(404).json({ success: false, message: "User not found." });
+      }
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 // chck the database block check 
 
@@ -947,8 +1076,36 @@ app.put("/reset-password", async (req, res) => {
   res.json(result);
 });
 
+// database admin create the new admin
+app.put("/userLogin/subadmin", async (req, res) => {
+  const user = req.body;
+  console.log("put", user);
+  const filter = { phoneNumber: user.phoneNumber }; // Match by phone number
+  const updateDoc = { $set: { subrole: "subadmin" } };
+  const result = await userCollection.updateOne(filter, updateDoc);
+  res.json(result);
+});
+
 // Delete Admin
 app.delete("/userLogin/admin/:phoneNumber", async (req, res) => {
+  const { phoneNumber } = req.params;
+
+  try {
+    const result = await userCollection.deleteOne({ phoneNumber: phoneNumber });
+
+    if (result.deletedCount > 0) {
+      res.json({ success: true, message: "Admin deleted successfully", deletedCount: result.deletedCount });
+    } else {
+      res.status(404).json({ success: false, message: "Admin not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting admin:", error);
+    res.status(500).json({ success: false, error: "Failed to delete admin" });
+  }
+});
+
+// deleet subadmin 
+app.delete("/userLogin/subadmin/:phoneNumber", async (req, res) => {
   const { phoneNumber } = req.params;
 
   try {
@@ -1112,94 +1269,14 @@ app.get('/users/:email', async (req, res) => {
     }
   });
 
-  // API to save a search term
-app.post("/api/save-search", async (req, res) => {
-  const { searchTerm,phone } = req.body;
-  console.log(req.body)
-
-  if (!searchTerm || !phone || searchTerm.trim() === "") {
-    return res.status(400).json({ error: "Search term is required." });
-  }
-
-  try {
-    
-    const newSearch = { searchTerm,phone, createdAt: new Date() };
-    await searchCollection.insertOne(newSearch);
-    res.status(201).json({ message: "Search term saved successfully!" });
-  } catch (error) {
-    console.error("Error saving search term:", error);
-    res.status(500).json({ error: "Failed to save search term." });
-  }
-});
-
-// 1. Fetch all search terms
-app.get("/api/search-terms", async (req, res) => {
-  try {
-    const { phone } = req.query; 
-
-      const searchTerms = await searchCollection.find({ phone }).toArray();
-
-    res.status(200).json(searchTerms);
-  } catch (error) {
-    console.error("Error fetching search terms:", error);
-    res.status(500).json({ error: "Failed to fetch search terms" });
-  }
-});
-
-  
-app.delete("/api/search-terms/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await searchCollection
-      .deleteOne({ _id: new ObjectId(id) });
-
-    if (result.deletedCount === 1) {
-      res.status(200).json({ message: "Search term deleted successfully" });
-    } else {
-      res.status(404).json({ error: "Search term not found" });
-    }
-  } catch (error) {
-    res.status(500).json({ error: "Failed to delete search term" });
-  }
-});
-
-
-app.post("/api/saved-products", async (req, res) => {
-  const productData = req.body;
-
-  if (!productData.model || !productData.image || !productData.price) {
-    return res.status(400).json({ error: "Missing required product fields" });
-  }
-
-  try {
   
 
-    // Insert the product into the "savedProducts" collection
-    const result = await lovelistCollection.insertOne(productData);
 
-    res.status(201).json({
-      message: "Product saved successfully",
-      productId: result.insertedId,
-    });
-  } catch (error) {
-    console.error("Error saving product:", error);
-    res.status(500).json({ error: "Failed to save product" });
-  }
-});
-
-app.get("/api/lovelistproduct", async (req, res) => {
-  const { phone } = req.query;
-  // console.log(req.query)
 
   
-  try {
-    const products = await lovelistCollection.find({userPhone:phone }).toArray();
-    console.log(products)
-    res.status(200).json(products);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching products", error });
-  }
-});
+
+
+
 
   }
 
