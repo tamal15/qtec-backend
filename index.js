@@ -21,7 +21,7 @@ app.use(express.json())
 
   // newlandingpage 
 // 96KlHwz2RO8AwpjK 
-const uri = `mongodb+srv://newlandingpage:96KlHwz2RO8AwpjK@cluster0.4awdg7q.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.4awdg7q.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -190,6 +190,18 @@ async function run() {
       }
     });
 
+    app.put('/updateStatus/:id', async(req,res)=>{
+      const id=req.params.id;
+      const updateDoc=req.body.status;
+      console.log(updateDoc)
+      console.log(updateDoc)
+      const filter={_id:new ObjectId(id)}
+      const result=await paymentCollection.updateOne(filter,{
+          $set:{status:updateDoc}
+      })
+      res.json(result)
+  });
+
     app.get('/userMy', async (req, res) => {
       try {
         const email = req.params.email; // Extract the email from the URL
@@ -258,16 +270,6 @@ function decryptData(encryptedData) {
   decrypted = Buffer.concat([decrypted, decipher.final()]);
   return JSON.parse(decrypted.toString());
 }
-
-
- 
-
-
-
-
-
-
-
 
 
 
@@ -349,7 +351,7 @@ app.get("/editblogs/:id", async (req, res) => {
 app.put('/bannerdataupdate/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { title,link, time, image } = req.body;
+    const { title,link, time, image,detail } = req.body;
     
 
     const objectId = new ObjectId(id);
@@ -360,6 +362,7 @@ app.put('/bannerdataupdate/:id', async (req, res) => {
           title,
           link,
           time,
+          detail,
           image,
         },
       }
@@ -404,14 +407,14 @@ app.put('/offerupdate/:id', async (req, res) => {
 app.put('/productdataupdate/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { title,size, code,discount,category,ProductPrice,description, image } = req.body;
+    const { title,size, code,stock,discount,category,ProductPrice,description, image } = req.body;
     
     const objectId = new ObjectId(id);
       const result = await productdataCollection.updateOne(
       { _id: objectId }, 
       {
         $set: {
-          title,size, code,discount,category,ProductPrice,description,
+          title,size, code,stock,discount,category,ProductPrice,description,
           image,
         },
       }
@@ -571,7 +574,11 @@ app.delete("/productdatadelete/:id", async (req, res) => {
 app.put('/navberdataupdate/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { home,about,contact,offer,allads,career, image } = req.body;
+    const { home,about,contact,offer,allads,career, image,number,
+    email,
+    detail,
+    background,
+    color } = req.body;
     
 
     const objectId = new ObjectId(id);
@@ -585,6 +592,11 @@ app.put('/navberdataupdate/:id', async (req, res) => {
       offer,
       allads,
       career,
+      number,
+    email,
+    detail,
+    background,
+    color,
           image,
         },
       }
@@ -689,57 +701,6 @@ app.get("/aboutparts", async (req, res) => {
   const result = await aboutpostCollection.find({}).toArray();
   res.json(result);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-// unread message 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
