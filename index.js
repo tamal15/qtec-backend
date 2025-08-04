@@ -6,6 +6,9 @@ require('dotenv').config();
 const cors = require("cors");
 const bcrypt = require('bcryptjs');
 const axios = require("axios");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const http = require("http");
 const { Server } = require("socket.io");
 const crypto = require('crypto');
@@ -19,8 +22,6 @@ app.use(cors())
 app.use(express.json())
 
 
-  // newlandingpage 
-// 96KlHwz2RO8AwpjK 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.4awdg7q.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -146,7 +147,7 @@ async function run() {
     
     app.post('/init', async (req, res) => {
       try {
-        const { cartProducts, total_amount,  product_name,  cus_name, cus_email, date, status, address,  cus_postcode, District, payment_number, phone } = req.body;
+        const { cartProducts, total_amount,  product_name,  cus_name, cus_email, date, status, address,transection,  cus_postcode, District, payment_number, phone } = req.body;
         
         if (!cartProducts || !cus_name || !cus_email) {
           return res.status(400).json({ message: 'Missing required fields' });
@@ -174,6 +175,7 @@ async function run() {
           cartProducts,
           product_image: 'https://i.ibb.co/t8Xfymf/logo-277198595eafeb31fb5a.png',
           address,
+          transection,
           cus_add2: 'Dhaka',
           cus_postcode,
           District,
@@ -234,6 +236,49 @@ async function run() {
         res.status(500).json({ message: 'An error occurred while deleting the order' });
       }
     });
+
+
+    // photo upload 
+
+    const UPLOAD_DIR = "/home/virtuals/public_html/demo";
+
+// ✅ Create the directory if it doesn't exist
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  console.log("📁 Upload folder created at:", UPLOAD_DIR);
+} else {
+  console.log("📁 Upload folder already exists.");
+}
+
+// ✅ Serve static files from /demo (IMPORTANT)
+app.use("/demo", express.static(UPLOAD_DIR));
+
+// ✅ Multer configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOAD_DIR);
+  },
+  filename: (req, file, cb) => {
+    // Optional: keep original filename or add a timestamp
+    const filename = file.originalname.replace(/\s+/g, "_");
+    cb(null, filename); // use filename directly like "baby.jpg"
+  },
+});
+
+const upload = multer({ storage });
+
+// ✅ Upload endpoint
+app.post("/upload", upload.single("image"), (req, res) => {
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).json({ success: false, message: "No file uploaded" });
+  }
+
+  const fileUrl = `https://virtualshopbd.com/demo/${file.filename}`;
+  console.log("✅ File uploaded to:", fileUrl);
+  res.status(200).json({ success: true, url: fileUrl });
+});
 
 
 
@@ -404,32 +449,41 @@ app.put('/offerupdate/:id', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
 app.put('/productdataupdate/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { title,size, code,stock,discount,category,ProductPrice,description, image } = req.body;
-    
+    const { title, size, code, stock, discount, category, ProductPrice, description, images } = req.body;
     const objectId = new ObjectId(id);
-      const result = await productdataCollection.updateOne(
-      { _id: objectId }, 
+
+    const result = await productdataCollection.updateOne(
+      { _id: objectId },
       {
         $set: {
-          title,size, code,stock,discount,category,ProductPrice,description,
-          image,
+          title,
+          size,
+          code,
+          stock,
+          discount,
+          category,
+          ProductPrice,
+          description,
+          images,
         },
       }
     );
 
     if (result.modifiedCount > 0) {
-      res.json({ message: 'Award updated successfully', modifiedCount: result.modifiedCount });
+      res.json({ message: 'Product updated successfully', modifiedCount: result.modifiedCount });
     } else {
-      res.status(404).json({ message: 'Banner not found or no changes made' });
+      res.status(404).json({ message: 'Product not found or no changes made' });
     }
   } catch (error) {
-    console.error('Error updating banner:', error);
+    console.error('Error updating product:', error);
     res.status(500).json({ message: 'Server Error' });
   }
 });
+
 
 
 app.put('/aboutdataupdate/:id', async (req, res) => {
